@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Status, Task } from '../types';
 import TaskCard from './TaskCard';
@@ -9,6 +8,8 @@ interface TaskColumnProps {
   tasks: Task[];
   onDrop: (status: Status) => void;
   onDragStart: (e: React.DragEvent<HTMLDivElement>, taskId: string) => void;
+  onEditTask: (task: Task) => void;
+  onDeleteTask: (task: Task) => void;
 }
 
 const statusConfig = {
@@ -26,7 +27,7 @@ const statusConfig = {
     }
 }
 
-const TaskColumn: React.FC<TaskColumnProps> = ({ title, status, tasks, onDrop, onDragStart }) => {
+const TaskColumn: React.FC<TaskColumnProps> = ({ title, status, tasks, onDrop, onDragStart, onEditTask, onDeleteTask }) => {
     const [isDraggedOver, setIsDraggedOver] = useState(false);
 
     const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -61,7 +62,13 @@ const TaskColumn: React.FC<TaskColumnProps> = ({ title, status, tasks, onDrop, o
             <div className="space-y-3 min-h-[100px]">
                 {tasks.length > 0 ? (
                     tasks.map(task => (
-                        <TaskCard key={task.id} task={task} onDragStart={onDragStart} />
+                        <TaskCard 
+                            key={task.id} 
+                            task={task} 
+                            onDragStart={onDragStart}
+                            onEdit={onEditTask}
+                            onDelete={onDeleteTask}
+                        />
                     ))
                 ) : (
                     <div className="text-center text-slate-500 pt-8 text-sm">
