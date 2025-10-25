@@ -1,0 +1,5 @@
+{
+  "name": "Todo App for Daily Tasks",
+  "description": "A modern and sleek Todo application to track your daily tasks, organize them into folders, and visualize your progress across different stages: Pending, In Progress, and Completed.",
+  "requestFramePermissions": []
+}
