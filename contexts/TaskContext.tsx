@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { Task, Status } from '../types';
 
-const API_BASE_URL = 'http://localhost:5005/api/tasks';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5005/api/tasks';
 
 interface TaskContextType {
   tasks: Task[];
