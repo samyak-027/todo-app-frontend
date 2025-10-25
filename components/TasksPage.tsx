@@ -5,13 +5,19 @@ import { Status, Task } from '../types';
 import TaskColumn from './TaskColumn';
 import LoadingSpinner from './LoadingSpinner';
 import ErrorMessage from './ErrorMessage';
+import ConfirmationModal from './ConfirmationModal';
+import EditTaskModal from './EditTaskModal';
 
 const TasksPage: React.FC = () => {
   const { date } = useParams<{ date: string }>();
   const [searchParams] = useSearchParams();
   const folder = searchParams.get('folder');
-  const { tasks, updateTaskStatus, isLoading, error } = useTasks();
+  const { tasks, updateTaskStatus, deleteTask, updateTaskText, isLoading, error } = useTasks();
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
+
+  // State for modals
+  const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
 
   const tasksForDate = useMemo(() => {
     let filteredTasks = tasks.filter(task => task.date === date);
@@ -33,6 +39,29 @@ const TasksPage: React.FC = () => {
     }
   };
 
+  // Modal handlers
+  const handleOpenEditModal = (task: Task) => setTaskToEdit(task);
+  const handleOpenDeleteModal = (task: Task) => setTaskToDelete(task);
+  const handleCloseModals = () => {
+    setTaskToEdit(null);
+    setTaskToDelete(null);
+  };
+
+  const handleConfirmDelete = () => {
+    if (taskToDelete) {
+      deleteTask(taskToDelete.id);
+      handleCloseModals();
+    }
+  };
+
+  const handleSaveEdit = (newText: string) => {
+    if (taskToEdit) {
+      updateTaskText(taskToEdit.id, newText);
+      handleCloseModals();
+    }
+  };
+
+
   const pendingTasks = useMemo(() => tasksForDate.filter(t => t.status === Status.Pending), [tasksForDate]);
   const inProgressTasks = useMemo(() => tasksForDate.filter(t => t.status === Status.InProgress), [tasksForDate]);
   const completedTasks = useMemo(() => tasksForDate.filter(t => t.status === Status.Completed), [tasksForDate]);
@@ -50,6 +79,7 @@ const TasksPage: React.FC = () => {
   }
   
   const dateObj = new Date(date + 'T00:00:00');
+  // FIX: Corrected typo from toLocaleDate-String to toLocaleDateString
   const formattedDate = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
   return (
@@ -70,6 +100,8 @@ const TasksPage: React.FC = () => {
           tasks={pendingTasks}
           onDrop={handleDrop}
           onDragStart={handleDragStart}
+          onEditTask={handleOpenEditModal}
+          onDeleteTask={handleOpenDeleteModal}
         />
         <TaskColumn
           title="In Progress"
@@ -77,6 +109,8 @@ const TasksPage: React.FC = () => {
           tasks={inProgressTasks}
           onDrop={handleDrop}
           onDragStart={handleDragStart}
+          onEditTask={handleOpenEditModal}
+          onDeleteTask={handleOpenDeleteModal}
         />
         <TaskColumn
           title="Completed"
@@ -84,8 +118,25 @@ const TasksPage: React.FC = () => {
           tasks={completedTasks}
           onDrop={handleDrop}
           onDragStart={handleDragStart}
+          onEditTask={handleOpenEditModal}
+          onDeleteTask={handleOpenDeleteModal}
         />
       </div>
+
+      <ConfirmationModal
+        isOpen={!!taskToDelete}
+        onClose={handleCloseModals}
+        onConfirm={handleConfirmDelete}
+        title="Delete Task"
+        message={`Are you sure you want to delete the following task? This action cannot be undone.\n\n"${taskToDelete?.text}"`}
+      />
+
+      <EditTaskModal
+        isOpen={!!taskToEdit}
+        onClose={handleCloseModals}
+        onSave={handleSaveEdit}
+        task={taskToEdit}
+      />
     </div>
   );
 };
