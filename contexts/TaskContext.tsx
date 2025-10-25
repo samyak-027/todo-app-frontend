@@ -7,6 +7,8 @@ interface TaskContextType {
   tasks: Task[];
   addTasks: (texts: string[], folder?: string) => Promise<boolean>;
   updateTaskStatus: (taskId: string, newStatus: Status) => Promise<void>;
+  deleteTask: (taskId: string) => Promise<void>;
+  updateTaskText: (taskId: string, newText: string) => Promise<void>;
   isLoading: boolean;
   isMutating: boolean;
   error: string | null;
@@ -93,7 +95,7 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, [fetchTasks]);
 
   const updateTaskStatus = useCallback(async (taskId: string, newStatus: Status) => {
-    const originalTasks = tasks;
+    const originalTasks = [...tasks];
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === taskId ? { ...task, status: newStatus } : task
@@ -124,8 +126,64 @@ export const TaskProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     }
   }, [tasks]);
 
+  const deleteTask = useCallback(async (taskId: string) => {
+    const originalTasks = [...tasks];
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== taskId));
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/${taskId}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) {
+        throw new Error('Failed to delete task on the server.');
+      }
+    } catch (err) {
+      setTasks(originalTasks);
+      let message = 'Failed to delete task.';
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        message = `Could not connect to the backend. Please ensure the server is running.`;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      setError(message);
+      console.error('Error deleting task:', err);
+    }
+  }, [tasks]);
+
+  const updateTaskText = useCallback(async (taskId: string, newText: string) => {
+    const originalTasks = [...tasks];
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === taskId ? { ...task, text: newText } : task
+      )
+    );
+
+    try {
+      const response = await fetch(`${API_BASE_URL}/${taskId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: newText }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to update task text on the server.');
+      }
+    } catch (err) {
+      setTasks(originalTasks);
+      let message = 'Failed to update task.';
+      if (err instanceof TypeError && err.message === 'Failed to fetch') {
+        message = `Could not connect to the backend. Please ensure the server is running.`;
+      } else if (err instanceof Error) {
+        message = err.message;
+      }
+      setError(message);
+      console.error('Error updating task text:', err);
+    }
+  }, [tasks]);
+
   return (
-    <TaskContext.Provider value={{ tasks, addTasks, updateTaskStatus, isLoading, isMutating, error }}>
+    <TaskContext.Provider value={{ tasks, addTasks, updateTaskStatus, deleteTask, updateTaskText, isLoading, isMutating, error }}>
       {children}
     </TaskContext.Provider>
   );
